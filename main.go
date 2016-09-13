@@ -1,7 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"io"
+	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -37,14 +40,31 @@ var pos int
 var tokens []string
 
 func main() {
-	str := "1 * 3 + 4"
-	tokens = strings.Split(str, " ")
-	e, err := parseExp()
-	if err != nil {
-		fmt.Printf("%v\n", err)
-		os.Exit(1)
+	in := bufio.NewReader(os.Stdin)
+	for {
+		if _, err := os.Stdout.WriteString("> "); err != nil {
+			fmt.Println("FAIL")
+			return
+		}
+
+		line, err := in.ReadBytes('\n')
+		if err == io.EOF {
+			return
+		}
+		if err != nil {
+			log.Fatalf("ReadBytes: %s", err)
+		}
+
+		str := strings.Trim(string(line), "\n ")
+		tokens = strings.Split(str, " ")
+		pos = 0
+		e, err := parseExp()
+		if err != nil {
+			fmt.Printf("%v\n", err)
+		}
+		fmt.Println(str, "=", print(e), "=", eval(e))
 	}
-	fmt.Println(str, "=", print(e), "=", eval(e))
+
 }
 
 func eval(e exp) int {
@@ -59,6 +79,18 @@ func eval(e exp) int {
 			return eval(et.lhs) * eval(et.rhs)
 		case "/":
 			return eval(et.lhs) / eval(et.rhs)
+		case "==":
+			if eval(et.lhs) == eval(et.rhs) {
+				return 1
+			} else {
+				return 0
+			}
+		case "!=":
+			if eval(et.lhs) != eval(et.rhs) {
+				return 1
+			} else {
+				return 0
+			}
 		}
 	case *lit:
 		return et.val
